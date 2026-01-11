@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Manager - Automated Invoice Processing</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" href="favicon.png" type="image/png">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <div class="logo">
+        <div class="logo-icon"><i class="fa-solid fa-file-invoice"></i></div>
+        <div class="logo-text">
+          <span class="brand">Invoice Manager</span>
+          <span class="tagline">Smart Invoice Processing</span>
+        </div>
+      </div>
+
+
+      <div class="nav-actions">
+        <!-- Auth Buttons (Managed by JS) -->
+        <a id="navSignInBtn" href="/connect-drive" class="btn btn-outline" style="display: none;">Sign In</a>
+        <button id="navLogoutBtn" class="btn btn-outline" onclick="handleLogout()" style="display: none;">Log
+          Out</button>
+
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="container hero-content">
+      <div class="hero-badge">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Smart AI & OCR Analysis • Auto-Organize to Drive
+      </div>
+      <h1>Smart Invoice Processing <br> <span class="highlight">Made Effortless</span></h1>
+      <p class="hero-subtext">
+        Upload receipts and invoices, <span class="highlight">Smart AI & OCR Analysis</span> extracts vendor, date &
+        amount, auto-renames files as
+        <code>yyyy_mm_dd_vendor_amount</code>, and organizes them in Google Drive.
+      </p>
+
+      <div class="hero-buttons">
+        <button class="btn btn-primary btn-lg" onclick="scrollToUpload()">Get Started <i
+            class="fa-solid fa-arrow-right"></i></button>
+        <button class="btn btn-outline btn-lg" onclick="scrollToHowItWorks()">How it Works</button>
+      </div>
+
+      <div class="features-row">
+        <span><i class="fa-solid fa-shield-halved"></i> Enterprise-grade security</span>
+        <span><i class="fa-solid fa-bolt"></i> Smart AI & OCR</span>
+        <span><i class="fa-solid fa-file-pdf"></i> Supports PDF, JPEG, PNG</span>
+      </div>
+    </div>
+  </header>
+
+
+
+  <!-- Main App Section -->
+  <section id="app-section" class="app-section">
+    <div class="container">
+
+      <!-- Upload State (Always visible now) -->
+      <div id="uploadSection" class="upload-container">
+        <div class="section-header">
+          <h2>Upload Your Documents</h2>
+          <p>Drop your invoices, receipts, or bills below, Smart AI & OCR Analysis will automatically extract the
+            data.</p>
+        </div>
+
+
+
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept=".pdf, .png, .jpg, .jpeg" hidden>
+
+          <!-- Default Content -->
+          <div class="dropzone-content" id="dropzoneContent">
+            <div class="upload-icon-circle">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <h3>Upload Invoices & Receipts</h3>
+            <p>Drag and drop your documents or <span class="link-text"
+                onclick="document.getElementById('fileInput').click()">click to browse</span>.</p>
+            <div class="file-types">
+              <span><i class="fa-regular fa-image"></i> Images</span>
+              <span><i class="fa-solid fa-file-pdf"></i> PDF</span>
+            </div>
+          </div>
+
+          <!-- Preview Content (Hidden initially) -->
+          <div class="preview-container" id="previewContainer" style="display: none;">
+            <button class="delete-btn" onclick="handleDeleteSelection()">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+
+            <div class="preview-icon" id="previewIcon">
+              <!-- Will be populated by JS (img or icon) -->
+            </div>
+
+
+
+            <div class="rename-box">
+              <label for="filenameInput">File Name</label>
+              <input type="text" id="filenameInput" class="filename-input">
+            </div>
+
+            <button class="btn btn-primary" onclick="processSelectedFile()">
+              <i class="fa-solid fa-check"></i> Process & Auto-Save
+            </button>
+          </div>
+        </div>
+
+        <!-- Results Area (Moved Below Dropzone) -->
+        <div id="resultArea" class="result-area" style="display: none; margin-top: 2rem;">
+
+          <!-- New Digital Receipt Grid -->
+          <div id="resultGrid" class="result-grid" style="display: none;">
+            <!-- Vendor Card -->
+            <div class="result-card">
+              <div class="card-icon-circle vendor">
+                <i class="fa-solid fa-store"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Vendor</span>
+                <span class="card-value" id="resVendor">--</span>
+              </div>
+            </div>
+
+            <!-- Date Card -->
+            <div class="result-card">
+              <div class="card-icon-circle date">
+                <i class="fa-regular fa-calendar"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Date</span>
+                <span class="card-value" id="resDate">--</span>
+              </div>
+            </div>
+
+            <!-- Amount Card -->
+            <div class="result-card">
+              <div class="card-icon-circle amount">
+                <i class="fa-solid fa-dollar-sign"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Amount</span>
+                <span class="card-value" id="resAmount">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden raw JSON for fallback/debug -->
+          <pre id="resultJson" style="display: none;"></pre>
+
+          <div class="result-actions" style="margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+            <div id="driveLinkContainer" style="display:none;">
+              <a id="driveLinkBtn" href="#" target="_blank" class="btn btn-outline btn-sm">
+                <i class="fa-brands fa-google-drive"></i> View in Drive
+              </a>
+            </div>
+            <button id="clearBtn" class="btn btn-light btn-sm" onclick="handleClear()" style="display: none;">
+              <i class="fa-solid fa-rotate-right"></i> Clear & Start Over
+            </button>
+          </div>
+
+        </div>
+
+        <!-- NEW: Connect Drive Box (Below Upload) -->
+        <div id="driveConnectBox" class="drive-connect-box" style="display: none;">
+          <div class="drive-box-content">
+            <div class="drive-icon-small">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg"
+                alt="Drive">
+            </div>
+            <div class="drive-text">
+              <h4>Connect Google Drive</h4>
+              <p>Automatically save and organize processed files.</p>
+            </div>
+            <a href="/connect-drive" class="btn btn-sm btn-google-outline">
+              Connect
+            </a>
+          </div>
+        </div>
+
+
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- How it Works Steps -->
+  <section id="how-it-works" class="steps-section">
+    <div class="container">
+      <div class="section-badge">How It Works</div>
+      <h2>From Chaos to Clarity in 5 Simple Steps</h2>
+      <p class="section-desc">Our intelligent pipeline handles everything from upload to cloud storage, so you can focus
+        on what matters.</p>
+
+      <div class="steps-grid">
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-icon"><i class="fa-solid fa-upload"></i></div>
+          <h3>Upload Documents</h3>
+          <p>Drag & drop or click to upload invoices, receipts, and bills from any device.</p>
+        </div>
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-icon"><i class="fa-solid fa-expand"></i></div>
+          <h3>Smart AI & OCR</h3>
+          <p>Extracts vendor name, date, amount for accurate record keeping.</p>
+        </div>
+        <!-- Step 3 -->
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-icon"><i class="fa-regular fa-folder"></i></div>
+          <h3>Smart Organization</h3>
+          <p>Files are auto-renamed and organized into folders by date.</p>
+        </div>
+        <!-- Step 4 -->
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-icon"><i class="fa-solid fa-cloud"></i></div>
+          <h3>Cloud Sync</h3>
+          <p>Processed documents are automatically synced to your connected Google Drive.</p>
+        </div>
+        <!-- Step 5 -->
+        <div class="step-card">
+          <div class="step-number">5</div>
+          <div class="step-icon"><i class="fa-regular fa-bell"></i></div>
+          <h3>Notifications</h3>
+          <p>Get alerts for processing status and completion.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Footer -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-box">
+        <h2>Ready to Automate Your Invoice Organisation?</h2>
+        <p>Join thousands of businesses saving hours every week with automated invoice processing.</p>
+        <button class="btn btn-light btn-lg" onclick="scrollToUpload()">Get Started for Free <i
+            class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-content">
+      <div class="footer-logo">
+        <i class="fa-solid fa-file-invoice"></i> Invoice Manager
+      </div>
+      <div class="copyright">
+        © 2024 Invoice Manager. Smart AI & OCR Analysis invoice processing with automatic Drive organization.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

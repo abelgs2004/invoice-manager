@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment
+.env
+venv/
+env/
+.venv/
+
+# Google Credentials
+credentials.json
+token.json
+client_secret.json
+
+# Storage
+backend/storage/
+temp_*
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
