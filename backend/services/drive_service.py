@@ -9,8 +9,25 @@ from googleapiclient.http import MediaFileUpload
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # backend/
-CREDENTIALS_FILE = os.path.join(BASE_DIR, "credentials.json")
-TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
+
+# Robust path checking for Deployment (Render) vs Local
+def find_file(filename):
+    # 1. Local Dev: backend/filename
+    path1 = os.path.join(BASE_DIR, filename)
+    if os.path.exists(path1): return path1
+    
+    # 2. Render Root: ./filename
+    path2 = os.path.join(os.getcwd(), filename)
+    if os.path.exists(path2): return path2
+    
+    # 3. Render Secrets: /etc/secrets/filename
+    path3 = f"/etc/secrets/{filename}"
+    if os.path.exists(path3): return path3
+    
+    return path1 # Default to backend/ for error msg
+
+CREDENTIALS_FILE = find_file("credentials.json")
+TOKEN_FILE = os.path.join(BASE_DIR, "token.json") # Token is always written to backend/ for now
 
 # IMPT: On deploy, update Google Cloud Console "Authorized URIs" & set APP_BASE_URL env var.
 REDIRECT_URI = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000") + "/oauth/callback"
