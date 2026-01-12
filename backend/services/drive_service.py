@@ -38,47 +38,30 @@ def is_drive_connected() -> bool:
     return os.path.exists(TOKEN_FILE)
 
 
+def _require_credentials_file():
+    if not os.path.exists(CREDENTIALS_FILE):
+        raise Exception(f"Missing credentials.json at: {CREDENTIALS_FILE}")
 
-def _get_flow(code=None):
-    # Case 1: Use File if exists
-    if os.path.exists(CREDENTIALS_FILE):
-        flow = Flow.from_client_secrets_file(
-            CREDENTIALS_FILE,
-            scopes=SCOPES,
-            redirect_uri=REDIRECT_URI
-        )
-    # Case 2: Use Env Vars (Cloud Shell fallback)
-    elif os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"):
-        client_config = {
-            "web": {
-                "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-                "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [REDIRECT_URI]
-            }
-        }
-        flow = Flow.from_client_config(
-            client_config,
-            scopes=SCOPES,
-            redirect_uri=REDIRECT_URI
-        )
-    else:
-         raise Exception(f"Missing credentials! Please add 'backend/credentials.json' OR set GOOGLE_CLIENT_ID/SECRET env vars.")
-
-    if code:
-        flow.fetch_token(code=code)
-    
-    return flow
 
 def get_auth_url() -> str:
-    flow = _get_flow()
+    _require_credentials_file()
+    flow = Flow.from_client_secrets_file(
+        CREDENTIALS_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI,
+    )
     auth_url, _ = flow.authorization_url(prompt="consent")
     return auth_url
 
 
 def save_token(code: str):
-    flow = _get_flow(code=code)
+    _require_credentials_file()
+    flow = Flow.from_client_secrets_file(
+        CREDENTIALS_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI,
+    )
+    flow.fetch_token(code=code)
     creds = flow.credentials
     with open(TOKEN_FILE, "w", encoding="utf-8") as f:
         f.write(creds.to_json())

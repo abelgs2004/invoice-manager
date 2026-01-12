@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist the SQLite database
+      - ./backend/data:/app/backend/data
+      # Persist the organized invoices (storage)
+      - ./backend/storage:/app/storage
+      # Mount credentials and token so they persist and are accessible
+      - ./backend/token.json:/app/backend/token.json
+      - ./backend/credentials.json:/app/backend/credentials.json
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override Windows paths from .env for Linux container
+      - TESSERACT_CMD=/usr/bin/tesseract
+      # pdf2image usually finds poppler in /usr/bin if installed via apt
+      - POPPLER_PATH=/usr/bin
+    restart: unless-stopped
