@@ -43,26 +43,45 @@ def _require_credentials_file():
         raise Exception(f"Missing credentials.json at: {CREDENTIALS_FILE}")
 
 
-def get_auth_url() -> str:
+import json
+
+def get_flow(state=None):
+    """Helper to create Flow from file OR env var."""
+    # 1. Try Env Var (Best for Cloud)
+    json_str = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    if json_str:
+        try:
+            client_config = json.loads(json_str)
+            return Flow.from_client_config(
+                client_config,
+                scopes=SCOPES,
+                redirect_uri=REDIRECT_URI,
+                state=state
+            )
+        except json.JSONDecodeError:
+            print("Error decoding GOOGLE_CREDENTIALS_JSON env var")
+    
+    # 2. Fallback to File (Best for Local)
     _require_credentials_file()
-    flow = Flow.from_client_secrets_file(
+    return Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI,
+        state=state
     )
+
+def get_auth_url() -> str:
+    flow = get_flow()
     auth_url, _ = flow.authorization_url(prompt="consent")
     return auth_url
 
 
 def save_token(code: str):
-    _require_credentials_file()
-    flow = Flow.from_client_secrets_file(
-        CREDENTIALS_FILE,
-        scopes=SCOPES,
-        redirect_uri=REDIRECT_URI,
-    )
+    flow = get_flow()
     flow.fetch_token(code=code)
     creds = flow.credentials
+    # Save token to file (still needed for persistence)
+    # On ephemeral file systems, this is temporary, but sufficient for demos
     with open(TOKEN_FILE, "w", encoding="utf-8") as f:
         f.write(creds.to_json())
 
