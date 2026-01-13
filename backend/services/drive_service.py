@@ -35,9 +35,9 @@ if not REDIRECT_URI:
     REDIRECT_URI = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000") + "/oauth/callback"
 
 
-def is_drive_connected() -> bool:
+def is_drive_connected(creds_json: str = None) -> bool:
     """Frontend uses this via /drive/status."""
-    return os.path.exists(TOKEN_FILE)
+    return bool(creds_json)
 
 
 def _require_credentials_file():
@@ -78,20 +78,24 @@ def get_auth_url() -> str:
     return auth_url
 
 
-def save_token(code: str):
+def get_credentials(code: str):
     flow = get_flow()
     flow.fetch_token(code=code)
     creds = flow.credentials
-    # Save token to file (still needed for persistence)
-    # On ephemeral file systems, this is temporary, but sufficient for demos
-    with open(TOKEN_FILE, "w", encoding="utf-8") as f:
-        f.write(creds.to_json())
+    return creds.to_json()
 
 
-def get_drive_service():
-    if not is_drive_connected():
+def get_drive_service(creds_json: str):
+    if not creds_json:
         raise Exception("Google Drive not connected. Please visit /connect-drive")
-    creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    
+    # Check if creds is a string (JSON) or dict
+    if isinstance(creds_json, str):
+        creds_data = json.loads(creds_json)
+    else:
+        creds_data = creds_json
+        
+    creds = Credentials.from_authorized_user_info(creds_data, SCOPES)
     return build("drive", "v3", credentials=creds)
 
 
@@ -113,8 +117,8 @@ def get_or_create_folder(service, name, parent_id=None):
     return folder["id"]
 
 
-def upload_to_drive(local_path, year, month, day):
-    service = get_drive_service()
+def upload_to_drive(local_path, year, month, day, creds_json):
+    service = get_drive_service(creds_json)
 
     root = get_or_create_folder(service, "Invoices")
     year_f = get_or_create_folder(service, year, root)
@@ -138,8 +142,8 @@ def upload_to_drive(local_path, year, month, day):
     }
 
 
-def disconnect_drive():
-    if os.path.exists(TOKEN_FILE):
-        os.remove(TOKEN_FILE)
-    return True
+# def disconnect_drive():
+#     if os.path.exists(TOKEN_FILE):
+#         os.remove(TOKEN_FILE)
+#     return True
 

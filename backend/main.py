@@ -13,8 +13,20 @@ from backend.routers.upload import router as upload_router
 from backend.routers.drive_auth import router as drive_router
 from backend.logging_setup import setup_logging
 
+from starlette.middleware.sessions import SessionMiddleware
+
 setup_logging()
 app = FastAPI(title="Invoice Processing API", version="1.0.0")
+
+# Add Session Middleware (Keys should be in .env for production)
+# This encrypts the session data (like google tokens) in a cookie
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SECRET_KEY", "super-secret-key-change-me"),
+    session_cookie="invoice_session",
+    max_age=86400 * 7, # 7 days
+    https_only=False # Set to True in production with SSL
+)
 
 app.add_middleware(
     CORSMiddleware,

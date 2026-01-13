@@ -1,7 +1,7 @@
 import os
 import shutil
 from datetime import datetime
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Request
 from starlette.concurrency import run_in_threadpool
 
 from backend.services.pdf_service import extract_text_from_pdf
@@ -16,6 +16,7 @@ router = APIRouter()
 
 @router.post("/upload")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     dry_run: bool = False,
     use_custom_name: bool = False,
@@ -23,6 +24,10 @@ async def upload_file(
     provided_date: str = Form(None),
     provided_amount: str = Form(None)
 ):
+    # 0) Auth Check (Skip for Dry Run if you want unregistered users to try it out)
+    creds_json = request.session.get("user_creds")
+    if not dry_run and not creds_json:
+        raise HTTPException(status_code=401, detail="Authentication required. Please connect Google Drive.")
     # 0) Validate
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in [".pdf", ".png", ".jpg", ".jpeg"]:
@@ -156,7 +161,8 @@ async def upload_file(
                 local_path=final_pdf_path,
                 year=year,
                 month=month,
-                day=day
+                day=day,
+                creds_json=creds_json
             )
         except Exception as e:
             print(f"Drive upload failed: {e}")

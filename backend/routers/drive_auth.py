@@ -1,14 +1,14 @@
-# backend/routers/drive_auth.py
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, JSONResponse
-from backend.services.drive_service import get_auth_url, save_token, is_drive_connected, disconnect_drive
+from backend.services.drive_service import get_auth_url, get_credentials, is_drive_connected
 
 router = APIRouter()
 
 @router.get("/drive/status")
-def drive_status():
-    # frontend calls this to know if Drive is connected
-    return JSONResponse({"connected": is_drive_connected()})
+def drive_status(request: Request):
+    # Check session for credentials
+    creds = request.session.get("user_creds")
+    return JSONResponse({"connected": is_drive_connected(creds)})
 
 
 @router.get("/connect-drive")
@@ -17,8 +17,11 @@ def connect_drive():
 
 
 @router.get("/oauth/callback")
-def oauth_callback(code: str):
-    save_token(code)
+def oauth_callback(request: Request, code: str):
+    # Exchange code for credentials and save to SESSION
+    creds_json = get_credentials(code)
+    request.session["user_creds"] = creds_json
+    
     # send user back to your UI
     import os
     base_url = os.getenv("APP_BASE_URL")
@@ -35,7 +38,7 @@ def oauth_callback(code: str):
 
 
 @router.post("/disconnect-drive")
-def disconnect_endpoint():
-    disconnect_drive()
+def disconnect_endpoint(request: Request):
+    request.session.clear()
     return JSONResponse({"status": "disconnected"})
 
