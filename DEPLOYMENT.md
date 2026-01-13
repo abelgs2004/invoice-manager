@@ -1,80 +1,73 @@
 # Deployment Guide: Invoice Manager on Koyeb
 
-This guide will walk you through deploying your Invoice Manager application for **free** using [Koyeb](https://www.koyeb.com/).
+## Overview
+This document outlines the procedures for deploying the Invoice Manager application to Koyeb. This platform is selected for its ease of use and student-friendly free tier.
 
 ## Prerequisites
-1.  **GitHub Account**: You must have the project pushed to your GitHub repository (which we have already done).
-2.  **Koyeb Account**: Sign up for a free account at [koyeb.com](https://www.koyeb.com/).
-3.  **Google Cloud Console Access**: You will need to assume the same Google account you used to set up the Drive API.
+1.  **GitHub Account**: Ensure the project is pushed to your remote repository.
+2.  **Koyeb Account**: Active account at [koyeb.com](https://www.koyeb.com/).
+3.  **Google Cloud Console Access**: Access to the project containing your Google Drive API credentials.
+4.  **Local Credentials**: Access to your local `backend/credentials.json` file.
 
 ---
 
-## Step 1: Prepare Your Google Credentials
-Koyeb needs your Google Drive permissions to upload files. Since we cannot securely upload the `credentials.json` file, we will paste its content as a "secret" text.
+## Deployment Procedure
 
-1.  On your computer, navigate to your project folder: `c:\Users\georg\invoice-project\backend\`.
-2.  Open the file named **`credentials.json`** using Notepad or any text editor.
-3.  **Select All** (Ctrl+A) and **Copy** (Ctrl+C).
-    *   *Keep this copied text ready for Step 3.*
+### Phase 1: Preparation of Credentials
+Koyeb requires your Google Service Account credentials to authorize file uploads. These cannot be uploaded securely as a file, so they will be injected as an environment variable.
 
----
+1.  Navigate to your local project directory: `invoice-project/backend/`.
+2.  Open `credentials.json` in a text editor.
+3.  Copy the entire content of this file to your clipboard. Ensure you capture the full JSON structure including the opening `{` and closing `}` braces.
 
-## Step 2: Create a Koyeb App
-1.  Log in to your [Koyeb Dashboard](https://app.koyeb.com/).
-2.  Click the **"Create App"** button.
-3.  **Select Deployment Method**: Choose **GitHub**.
-4.  **Select Repository**:
-    *   Search for your repository: `invoice-manager` (or `abelgs2004/invoice-manager`).
-    *   Click to select it.
-    *   Branch: `main`.
+### Phase 2: Application Creation on Koyeb
+1.  Log in to the [Koyeb Dashboard](https://app.koyeb.com/).
+2.  Select **Create App**.
+3.  Under **Deployment Method**, select **GitHub**.
+4.  Select the repository `invoice-manager` (or your specific repository name).
+5.  Set the branch to `main`.
 
----
+### Phase 3: Service Configuration
+Use the following settings to configure the build and runtime environment:
 
-## Step 3: Configure the Service
-1.  **Builder Configuration**:
-    *   Make sure **"Dockerfile"** is selected (Not "Buildpack").
-    *   It should automatically detect the `Dockerfile` in your root folder.
+**Build Settings**
+*   **Builder**: Select **Dockerfile**.
+*   **Location**: Root directory (default).
 
-2.  **Environment Variables** (Crucial Step):
-    *   Scroll down to the "Environment Variables" section.
-    *   Click **"Add Variable"**.
-    *   **Name**: `GOOGLE_CREDENTIALS_JSON`
-    *   **Value**: *Paste the JSON content you copied in Step 1*.
-    *   *Note: Ensure you paste the entire content, starting with `{` and ending with `}`.*
+**Environment Variables**
+This step is critical for application authentication.
+1.  Expand the **Environment Variables** section.
+2.  Click **Add Variable**.
+3.  **Key**: `GOOGLE_CREDENTIALS_JSON`
+4.  **Value**: Paste the JSON content copied in Phase 1.
+5.  **Click "Add Variable" again.**
+6.  **Key**: `GOOGLE_REDIRECT_URI`
+7.  **Value**: `https://<YOUR_APP_NAME>.koyeb.app/oauth/callback` (You will know your app name in the next step, so you might need to come back and edit this, or guess it now. It usually follows the pattern `https://<app-name>-<org-name>.koyeb.app`. If unsure, deploy first, get the URL, then update this variable).
 
-3.  **Instance Size**:
-    *   Select **"Nano"** or **"Free"** (whatever is available in the free tier).
+**Instance Settings**
+*   **Instance Type**: Select **Nano** or **Free** (based on availability).
+*   **App Name**: Enter a unique name (e.g., `invoice-manager-george`). This defines your public URL.
 
-4.  **App Name**:
-    *   Give your app a name, e.g., `invoice-manager-george`.
-    *   This will determine your URL (e.g., `https://invoice-manager-george.koyeb.app`).
+**Finalize**
+*   Click **Deploy**.
 
-5.  Click **"Deploy"**.
+### Phase 4: Google Cloud Authorization
+Once deployment starts, Koyeb generates a public URL. You must authorize this URL in Google Cloud Console to permit OAuth logins.
 
----
-
-## Step 4: Update Google Cloud Console
-Your app will take 2-4 minutes to build. Once it is "Healthy" and "Running", Koyeb will show you a public URL (e.g., `https://your-app-name.koyeb.app`).
-
-1.  Copy your new Koyeb URL.
-2.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
-3.  Navigate to **APIs & Services** > **Credentials**.
-4.  Under "OAuth 2.0 Client IDs", click the pencil icon to edit your client.
+1.  Wait for the deployment Status to change to **Healthy**.
+2.  Copy your application URL (e.g., `https://invoice-manager-george.koyeb.app`).
+3.  Navigate to [Google Cloud Console > Credentials](https://console.cloud.google.com/apis/credentials).
+4.  Locate your **OAuth 2.0 Client ID** and click the **Edit** (pencil) icon.
 5.  **Authorized JavaScript origins**:
-    *   Click "Add URI".
-    *   Paste your Koyeb URL (e.g., `https://your-app-name.koyeb.app`).
-    *   *Note: Do not include a trailing slash `/`.*
+    *   Add your Koyeb URL (e.g., `https://invoice-manager-george.koyeb.app`).
+    *   *Note: Do not include a trailing slash.*
 6.  **Authorized redirect URIs**:
-    *   Click "Add URI".
-    *   Paste your Koyeb URL with `/oauth/callback` at the end on it.
-    *   Example: `https://your-app-name.koyeb.app/oauth/callback`
+    *   Add the callback URL: `https://invoice-manager-george.koyeb.app/oauth/callback`
 7.  Click **Save**.
 
----
-
-## Step 5: Final Test
-1.  Open your Koyeb App URL in a browser.
-2.  You should see your Invoice Manager frontend.
-3.  Click **"Connect Google Drive"**.
-4.  Complete the Google Login flow.
-5.  Try uploading a file test!
+### Phase 5: Verification
+1.  Navigate to your Koyeb App URL in a web browser.
+2.  Verify the frontend interface loads correctly.
+3.  Click **Connect Google Drive**.
+4.  Complete the Google authentication flow.
+5.  Upload a test file to verify end-to-end functionality.

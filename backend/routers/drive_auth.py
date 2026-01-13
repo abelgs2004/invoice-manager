@@ -21,7 +21,16 @@ def oauth_callback(code: str):
     save_token(code)
     # send user back to your UI
     import os
-    base_url = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")
+    base_url = os.getenv("APP_BASE_URL")
+    if not base_url and os.getenv("GOOGLE_REDIRECT_URI"):
+        # Derive base URL from the redirect URI if possible
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+        if "/oauth/callback" in redirect_uri:
+            base_url = redirect_uri.replace("/oauth/callback", "")
+    
+    if not base_url:
+        base_url = "http://127.0.0.1:8000"
+
     return RedirectResponse(url=f"{base_url}/")
 
 
