@@ -102,12 +102,14 @@ async def upload_file(
             date_norm = "UNKNOWN"
 
         # 5) Folder parts from date_norm
+        date_pretty = date_raw
         if date_norm != "UNKNOWN":
             try:
                 parsed = datetime.strptime(date_norm, "%Y_%m_%d")
                 year = parsed.strftime("%Y")
                 month = parsed.strftime("%B")  # Use full month name (e.g., "January")
                 day = parsed.strftime("%d")
+                date_pretty = parsed.strftime("%d %B %Y")
             except Exception:
                 year = month = "unknown"
                 day = "unknown"
@@ -144,7 +146,7 @@ async def upload_file(
                 "status": "dry_run",
                 "fields": {
                     "vendor": vendor_raw,
-                    "date": date_raw,
+                    "date": date_pretty,
                     "amount": amount_raw
                 },
                 "predicted_filename": f"{parsed.strftime('%d %B %Y') if date_norm != 'UNKNOWN' else 'UNKNOWN'}_{safe_vendor}_{safe_amount}{ext}", # Always suggest the auto-name in dry run
@@ -179,7 +181,7 @@ async def upload_file(
             "status": "success",
             "fields": {
                 "vendor": vendor_raw,
-                "date": date_raw,
+                "date": date_pretty,
                 "amount": amount_raw
             },
             "normalized": {
