@@ -106,10 +106,11 @@ async def upload_file(
             try:
                 parsed = datetime.strptime(date_norm, "%Y_%m_%d")
                 year = parsed.strftime("%Y")
-                month = parsed.strftime("%m")
+                month = parsed.strftime("%B")  # Use full month name (e.g., "January")
                 day = parsed.strftime("%d")
             except Exception:
-                year = month = day = "unknown"
+                year = month = "unknown"
+                day = "unknown"
                 date_norm = "UNKNOWN"
         else:
             year = month = day = "unknown"
@@ -122,10 +123,14 @@ async def upload_file(
             final_filename = os.path.basename(file.filename)
             # Optionally sanitize weird chars but keep intention
         else:
-            # Auto-generate name
+            # Auto-generate name: dd Month YYYY_Vendor_Amount.pdf
             safe_vendor = safe_filename(vendor_raw)
             safe_amount = safe_filename(amount_raw)
-            final_filename = f"{date_norm}_{safe_vendor}_{safe_amount}{ext}"
+            if date_norm != "UNKNOWN":
+                date_pretty = parsed.strftime("%d %B %Y")
+                final_filename = f"{date_pretty}_{safe_vendor}_{safe_amount}{ext}"
+            else:
+                final_filename = f"UNKNOWN_{safe_vendor}_{safe_amount}{ext}"
 
         # Safe vendor/amount vars for response (might be undefined if use_custom_name is True)
         # So re-define them for the response object
@@ -142,12 +147,12 @@ async def upload_file(
                     "date": date_raw,
                     "amount": amount_raw
                 },
-                "predicted_filename": f"{date_norm}_{safe_vendor}_{safe_amount}{ext}", # Always suggest the auto-name in dry run
+                "predicted_filename": f"{parsed.strftime('%d %B %Y') if date_norm != 'UNKNOWN' else 'UNKNOWN'}_{safe_vendor}_{safe_amount}{ext}", # Always suggest the auto-name in dry run
                 "detail": "Analysis complete. File not saved."
             }
 
         # 7) Local foldering
-        final_dir = os.path.join(STORAGE_ROOT, year, month, day)
+        final_dir = os.path.join(STORAGE_ROOT, year, month)
         os.makedirs(final_dir, exist_ok=True)
 
         final_pdf_path = os.path.join(final_dir, final_filename)

@@ -123,9 +123,8 @@ def upload_to_drive(local_path, year, month, day, creds_json):
     root = get_or_create_folder(service, "Invoices")
     year_f = get_or_create_folder(service, year, root)
     month_f = get_or_create_folder(service, month, year_f)
-    day_f = get_or_create_folder(service, day, month_f)
 
-    file_metadata = {"name": os.path.basename(local_path), "parents": [day_f]}
+    file_metadata = {"name": os.path.basename(local_path), "parents": [month_f]}
     media = MediaFileUpload(local_path, resumable=True)
 
     uploaded = service.files().create(
@@ -134,7 +133,7 @@ def upload_to_drive(local_path, year, month, day, creds_json):
         fields="id,webViewLink",
     ).execute()
 
-    folder_link = f"https://drive.google.com/drive/u/0/folders/{day_f}"
+    folder_link = f"https://drive.google.com/drive/u/0/folders/{month_f}"
 
     return {
         "file_link": uploaded.get("webViewLink"),
