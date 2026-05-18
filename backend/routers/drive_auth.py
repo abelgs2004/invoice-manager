@@ -12,14 +12,17 @@ def drive_status(request: Request):
 
 
 @router.get("/connect-drive")
-def connect_drive():
-    return RedirectResponse(get_auth_url())
+def connect_drive(request: Request):
+    auth_url, code_verifier = get_auth_url()
+    request.session["code_verifier"] = code_verifier
+    return RedirectResponse(auth_url)
 
 
 @router.get("/oauth/callback")
 def oauth_callback(request: Request, code: str):
     # Exchange code for credentials and save to SESSION
-    creds_json = get_credentials(code)
+    code_verifier = request.session.get("code_verifier")
+    creds_json = get_credentials(code, code_verifier)
     request.session["user_creds"] = creds_json
     
     # send user back to your UI

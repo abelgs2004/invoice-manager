@@ -72,14 +72,17 @@ def get_flow(state=None):
         state=state
     )
 
-def get_auth_url() -> str:
+def get_auth_url() -> tuple[str, str]:
     flow = get_flow()
+    flow.autogenerate_code_verifier = True
     auth_url, _ = flow.authorization_url(prompt="consent")
-    return auth_url
+    return auth_url, flow.code_verifier
 
 
-def get_credentials(code: str):
+def get_credentials(code: str, code_verifier: str = None):
     flow = get_flow()
+    if code_verifier:
+        flow.code_verifier = code_verifier
     flow.fetch_token(code=code)
     creds = flow.credentials
     return creds.to_json()
